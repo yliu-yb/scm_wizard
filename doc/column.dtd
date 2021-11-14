@@ -1,0 +1,128 @@
+<!ELEMENT columns (column*)>
+<!ELEMENT column (profile, s_token_set)>
+<!ATTLIST column case_id CDATA #REQUIRED
+		lon CDATA #REQUIRED
+		lat CDATA #REQUIRED
+		runtype CDATA #REQUIRED
+		start_datetime CDATA #REQUIRED
+		run_hour CDATA #REQUIRED>
+<!ELEMENT profile (forcing, sounding, soil)>
+<!ELEMENT forcing ((column_outline_frocing , data_forcing) | data_forcing_fromfile)>
+<!ELEMENT column_outline_frocing (z, u, v, w, QVAPOR, QCLOUD, QRAIN, T)>
+<!ELEMENT z EMPTY>
+<!ATTLIST z row  NMTOKEN #REQUIRED
+			unit CDATA        #FIXED     "m"
+>
+<!ELEMENT u EMPTY>
+<!ATTLIST u row  NMTOKEN #REQUIRED
+				unit CDATA        #FIXED     "ms-1"
+>
+<!ELEMENT v EMPTY>
+<!ATTLIST v row  NMTOKEN #REQUIRED
+				unit CDATA        #FIXED     "ms-1"
+>
+<!ELEMENT w EMPTY>
+<!ATTLIST w row  NMTOKEN #REQUIRED
+				unit CDATA        #FIXED     "ms-1"
+>
+<!ELEMENT QVAPOR EMPTY>
+<!ATTLIST QVAPOR row  NMTOKEN #REQUIRED
+				unit CDATA        #FIXED     "kgkg-1"
+>
+<!ELEMENT QCLOUD EMPTY>
+<!ATTLIST QCLOUD row  NMTOKEN #REQUIRED
+				unit CDATA        #FIXED     "kgkg-1"
+>
+<!ELEMENT QRAIN EMPTY>
+<!ATTLIST QRAIN row  NMTOKEN #REQUIRED
+				unit CDATA        #FIXED     "kgkg-1"
+>
+<!ELEMENT T EMPTY>
+<!ATTLIST T row  NMTOKEN #REQUIRED
+				unit CDATA        #FIXED     "K"
+>
+<!--
+	#data_forcing
+		%data_time format 2021_01_01-12:00:00
+-->
+<!ELEMENT data_forcing (#PCDATA)>
+<!ATTLIST data_forcing date_time CDATA #REQUIRED>
+<!--
+	#data_frocing_fromfile
+		%data_time format 2021_01_01-12:00:00
+		, (dir, start_datetime, end_datetime, time_resolution)
+-->
+<!ELEMENT data_forcing_fromfile EMPTY>
+<!ATTLIST data_forcing_fromfile dir             CDATA #REQUIRED>
+<!ATTLIST data_forcing_fromfile start_datetime  CDATA #REQUIRED>
+<!ATTLIST data_forcing_fromfile end_datetime    CDATA #REQUIRED>
+<!ATTLIST data_forcing_fromfile time_resolution CDATA #REQUIRED>
+<!--
+	#sounding
+		%data_time format 2021_01_01-12:00:00
+-->
+<!ELEMENT sounding (column_outline_sounding, data_sounding)>
+<!ELEMENT column_outline_sounding (z_terrain, u_10, v_10, t_2, q_2, psfc,
+								   z_sounding, u_sounding, v_sounding, theta, qv)
+>
+<!ELEMENT z_terrain (#PCDATA)>
+<!ATTLIST z_terrain unit CDATA        #FIXED     "m">
+<!ELEMENT u_10 (#PCDATA)>
+<!ATTLIST u_10      unit CDATA        #FIXED     "ms-1">
+<!ELEMENT v_10 (#PCDATA)>
+<!ATTLIST v_10      unit CDATA        #FIXED     "ms-1">
+<!ELEMENT t_2 (#PCDATA)>
+<!ATTLIST t_2       unit CDATA        #FIXED     "K">
+<!ELEMENT q_2 (#PCDATA)>
+<!ATTLIST q_2       unit CDATA        #FIXED     "kgkg-1">
+<!ELEMENT psfc (#PCDATA)>
+<!ATTLIST psfc      unit CDATA        #FIXED     "Pa">
+<!ELEMENT z_sounding EMPTY>
+<!ATTLIST z_sounding row  NMTOKEN #REQUIRED
+					 unit CDATA        #FIXED     "m"
+>
+<!ELEMENT u_sounding EMPTY>
+<!ATTLIST u_sounding row  NMTOKEN      #REQUIRED
+			unit CDATA        #FIXED     "ms-1"
+>
+<!ELEMENT v_sounding EMPTY>
+<!ATTLIST v_sounding row  NMTOKEN      #REQUIRED
+			unit CDATA        #FIXED     "ms-1"
+>
+<!ELEMENT theta EMPTY>
+<!ATTLIST theta row  NMTOKEN #REQUIRED
+				unit CDATA        #FIXED     "K"
+>
+<!ELEMENT qv EMPTY>
+<!ATTLIST qv row  NMTOKEN      #REQUIRED
+			unit CDATA        #FIXED     "kgkg-1"
+>
+<!ELEMENT data_sounding (#PCDATA)>
+<!ELEMENT soil (column_outline_soil, data_soil)>
+<!ELEMENT column_outline_soil (zero, TSK, TMN, z_soil, SOILT, SOILM)>
+<!ELEMENT zero (#PCDATA)>
+<!ATTLIST zero unit CDATA        #FIXED      "m">
+<!ELEMENT TSK (#PCDATA)>
+<!ATTLIST TSK  unit CDATA        #FIXED      "K">
+<!ELEMENT TMN (#PCDATA)>
+<!ATTLIST TMN  unit CDATA        #FIXED      "K">
+<!ELEMENT z_soil EMPTY>
+<!ATTLIST z_soil row  NMTOKEN      #REQUIRED
+				unit CDATA        #FIXED      "m"
+>
+<!ELEMENT SOILT EMPTY>
+<!ATTLIST SOILT row  NMTOKEN      #REQUIRED
+				unit CDATA        #FIXED      "K"
+>
+<!ELEMENT SOILM EMPTY>
+<!ATTLIST SOILM row  NMTOKEN      #REQUIRED
+				unit CDATA        #FIXED      "kgkg-1"
+>
+<!ELEMENT data_soil (#PCDATA)>
+<!ELEMENT s_token_set (s_token*)>
+<!ELEMENT s_token EMPTY>
+<!-- 	<!ATTLIST s_token   id (dlwrf | dswrf | ulwrf | uswrf | ts | tmax | tmin | us | vs | gflx | lflx | sflx | ps | ugs | vgs) #REQUIRED
+					alt      CDATA #REQUIRED
+					def      CDATA #REQUIRED
+					unit     CDATA #REQUIRED
+> -->

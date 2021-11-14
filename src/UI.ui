@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1129</width>
+    <height>734</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="pushButton">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>14</y>
+      <width>80</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>column.xml</string>
+    </property>
+   </widget>
+   <widget class="QGroupBox" name="log_groupBox">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>540</y>
+      <width>1111</width>
+      <height>151</height>
+     </rect>
+    </property>
+    <property name="title">
+     <string>log</string>
+    </property>
+    <widget class="QTextBrowser" name="log_textBrowser">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>30</y>
+       <width>1091</width>
+       <height>111</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="layoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>1111</width>
+      <height>491</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QGroupBox" name="froce_groupBox">
+       <property name="title">
+        <string>force_ideal.nc</string>
+       </property>
+       <widget class="MplWidget" name="plot_force_widget" native="true">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>60</y>
+          <width>551</width>
+          <height>431</height>
+         </rect>
+        </property>
+       </widget>
+       <widget class="QSplitter" name="splitter">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>30</y>
+          <width>130</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>variable:</string>
+         </property>
+        </widget>
+        <widget class="QComboBox" name="comboBox">
+         <property name="sizeAdjustPolicy">
+          <enum>QComboBox::AdjustToContents</enum>
+         </property>
+         <item>
+          <property name="text">
+           <string>U</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>V</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>W</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>QVAPOR</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>QCLOUD</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>QRAIN</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>theta</string>
+          </property>
+         </item>
+        </widget>
+       </widget>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="initialization">
+       <property name="title">
+        <string>input_souding&amp;soil</string>
+       </property>
+       <widget class="MplWidget" name="plot_initial_widget" native="true">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>20</y>
+          <width>551</width>
+          <height>471</height>
+         </rect>
+        </property>
+       </widget>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1129</width>
+     <height>20</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MplWidget</class>
+   <extends>QWidget</extends>
+   <header>mplwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>69</x>
+     <y>71</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>399</x>
+     <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>comboBox</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>170</x>
+     <y>71</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>567</x>
+     <y>310</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
