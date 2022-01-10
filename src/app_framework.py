@@ -38,7 +38,9 @@ class MyApp(QMainWindow):
         else:
             self.ui.log_textBrowser.append('<<--FATAL ERROR-->>')
             self.ui.log_textBrowser.append('|>xml 验证失败，错误提示：')
-            self.ui.log_textBrowser.append(self.str2Red(str(error_log)))
+            # print(error_log[0])
+            for err in error_log:
+                self.ui.log_textBrowser.append(self.str2Red(str(err)))
             return False
         # 生成input_sounding
         is_ok = self.px.make_input_sounding()

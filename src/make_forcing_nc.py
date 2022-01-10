@@ -50,17 +50,12 @@ class ForcingNCFileMake():
                 temperature = reanalyze_data.variables[var][:,:,0,0]
                 xishu = (1000/numpy.array(pressure))**0.286
                 theta = [(numpy.array(x) * xishu).tolist() for x in temperature]
-        #通过cdl生成force_ideal.nc
-        os.system("ncgen -o "+output_path+" "+cdlFName)
-        print(output_path)
-        print(cdlFName)
-        #将再分析资料数据写入force_ideal.nc中
-        force_nc = Dataset(output_path, 'r+')
         alt.reverse()
         alt = [x - alt[0] for x in alt]
         default_data = [0. for x in alt]
         self.datetime = reanalyze_datetime_wrf_format
         self.z = alt
+        # print(self.z)
         self.u = []
         self.v = []
         self.w = []
@@ -68,6 +63,23 @@ class ForcingNCFileMake():
         self.qcloud = []
         self.qrain = []
         self.theta = []
+        # 更改层数
+        z_top = 9417
+        z_top_idx = 0
+        for i in range(len(alt)):
+            if alt[i] > z_top:
+                z_top_idx = i + 1 + 4
+                break
+        print(z_top_idx)
+        z_top_idx = 36
+        # force_nc.createDimension('force_layers', z_top_idx + 1)
+        # 通过cdl生成force_ideal.nc
+        os.system("ncgen -o " + output_path + " " + cdlFName)
+        print(output_path)
+        print(cdlFName)
+        # 将再分析资料数据写入force_ideal.nc中
+        force_nc = Dataset(output_path, 'r+')
+
         for itime in range(len(reanalyze_datetime_wrf_format)):
             self.u.append(u[itime][::-1])
             self.v.append(v[itime][::-1])
@@ -78,12 +90,48 @@ class ForcingNCFileMake():
             self.theta.append(theta[itime][::-1])
 
             force_nc.variables['Times'][itime] = self.split(reanalyze_datetime_wrf_format[itime])
+            # force_nc.variables['Z_FORCE'][itime] = self.z[0:z_top_idx]
+            # force_nc.variables['U'][itime] = self.u[itime][0:z_top_idx]
+            # force_nc.variables['V'][itime] = self.v[itime][0:z_top_idx]
+            # force_nc.variables['W'][itime] = self.w[itime][0:z_top_idx]
+            # force_nc.variables['QVAPOR'][itime] = self.qvapor[itime][0:z_top_idx]
+            # force_nc.variables['QCLOUD'][itime] =self.qcloud[itime][0:z_top_idx]
+            # force_nc.variables['QRAIN'][itime] = self.qrain[itime][0:z_top_idx]
+            # force_nc.variables['T'][itime] = self.theta[itime][0:z_top_idx]
+            #
+            # force_nc.variables['U_G'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['V_G'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['W_SUBS'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['TH_UPSTREAM_X'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['TH_UPSTREAM_Y'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['QV_UPSTREAM_X'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['QV_UPSTREAM_Y'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['U_UPSTREAM_X'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['U_UPSTREAM_Y'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['V_UPSTREAM_X'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['V_UPSTREAM_Y'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['Z_FORCE_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['U_G_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['V_G_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['W_SUBS_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['TH_UPSTREAM_X_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['TH_UPSTREAM_Y_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['QV_UPSTREAM_X_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['QV_UPSTREAM_Y_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['U_UPSTREAM_X_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['U_UPSTREAM_Y_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['V_UPSTREAM_X_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['V_UPSTREAM_Y_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['TAU_X'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['TAU_X_TEND'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['TAU_Y'][itime] = default_data[0:z_top_idx]
+            # force_nc.variables['TAU_Y_TEND'][itime] = default_data[0:z_top_idx]
             force_nc.variables['Z_FORCE'][itime] = self.z
             force_nc.variables['U'][itime] = self.u[itime]
             force_nc.variables['V'][itime] = self.v[itime]
             force_nc.variables['W'][itime] = self.w[itime]
             force_nc.variables['QVAPOR'][itime] = self.qvapor[itime]
-            force_nc.variables['QCLOUD'][itime] =self.qcloud[itime]
+            force_nc.variables['QCLOUD'][itime] = self.qcloud[itime]
             force_nc.variables['QRAIN'][itime] = self.qrain[itime]
             force_nc.variables['T'][itime] = self.theta[itime]
 
