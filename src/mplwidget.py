@@ -7,15 +7,19 @@ import matplotlib.pylab as pylab
 matplotlib.use('QT5Agg')
 
 # Matplotlib canvas class to create figure
+SMALL_SIZE = 16
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 16
 class MplCanvas(Canvas):
     def __init__(self):
         self.fig = Figure()
-        params = {  'figure.titlesize': 'small',
-                    'legend.fontsize': 'x-small',
-                    'axes.labelsize':  'x-small',
-                    'axes.titlesize':  'x-small',
-                    'xtick.labelsize': 'x-small',
-                    'ytick.labelsize': 'x-small'}
+        
+        params = {  'figure.titlesize': BIGGER_SIZE,
+                    'legend.fontsize': MEDIUM_SIZE,
+                    'axes.labelsize':  SMALL_SIZE,
+                    'axes.titlesize':  MEDIUM_SIZE,
+                    'xtick.labelsize': SMALL_SIZE,
+                    'ytick.labelsize': SMALL_SIZE}
         pylab.rcParams.update(params)
         Canvas.__init__(self, self.fig)
         Canvas.setSizePolicy(self, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
