@@ -35,21 +35,27 @@ class MyApp(QMainWindow):
         self.ui = UI.Ui_MainWindow()
         self.ui.setupUi(self)
 
+        # window size change
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.setInterval(300)
         self.timer.timeout.connect(self.updateView)
         self.set_singnal_slot()
+
         # namelist load from user set file or form default file
         # namelist domain
         self.set_maxDomain_nums()
         self.set_namelist_table_content()
         self.add_data_to_namelist_table()
+
         # namelist content
-        self.ui.tableWidget_namelist.cellPressed.connect(self.hint_namelist_description)
+        self.ui.tableWidget_namelist.itemPressed.connect(self.hint_namelist_description)
         self.ui.tableWidget_namelist.cellChanged.connect(self.namelist_cell_changed)
         self.ui.pushButton_Reset.clicked.connect(self.namelist_domain_reset)
-        self.nest = []
+        self.ui.pushButton_validate.clicked.connect(self.namelist.Save)
+
+    def save_namelist(self):
+        self.namelist.Save()
 
     def namelist_domain_reset(self):
         columnCount = self.ui.tableWidget_namelist.columnCount()
@@ -57,14 +63,21 @@ class MyApp(QMainWindow):
             for j in range(0, len(self.namelist.parameter)):
                 self.ui.tableWidget_namelist.setItem(j, i, QTableWidgetItem(''))
 
-    def namelist_cell_changed(self):
-        row = self.ui.tableWidget_namelist.currentRow()
-        column = self.ui.tableWidget_namelist.currentColumn()
+    def namelist_cell_changed(self, row, column):
+        cell_text = self.ui.tableWidget_namelist.item(row, column).text()
         if column == 0:
-            self.namelist.parameter[row] = self.ui.tableWidget_namelist.item(row, column).text();
+            self.namelist.parameter[row] = cell_text
         elif column == 1:
-            self.namelist.mainDomain[row] = self.ui.tableWidget_namelist.item(row, column).text();
+            self.namelist.mainDomain[row] = cell_text
+        else:
+            self.namelist.nest[column-2][row] = cell_text
+        if row > 0 and row < 17:
+            cell_text = cell_text.zfill(2)
+            self.ui.tableWidget_namelist.cellChanged.disconnect(self.namelist_cell_changed)
+            self.ui.tableWidget_namelist.setItem(row, column, QTableWidgetItem(cell_text))
+            self.ui.tableWidget_namelist.cellChanged.connect(self.namelist_cell_changed)
 
+        return 0
     def hint_namelist_description(self):
         row = self.ui.tableWidget_namelist.currentRow()
         self.ui.textBrowser.clear()
@@ -74,6 +87,8 @@ class MyApp(QMainWindow):
         self.namelist = Namelist(0)
         for p, d in zip(self.namelist.parameter, self.namelist.defaultValue):
             rowcount = self.ui.tableWidget_namelist.rowCount()
+            if rowcount > 0 and rowcount < 17:
+                d = str(d).zfill(2)
             self.ui.tableWidget_namelist.insertRow(rowcount)
             self.ui.tableWidget_namelist.setItem(rowcount, 0, QTableWidgetItem(p))
             self.ui.tableWidget_namelist.setItem(rowcount, 1, QTableWidgetItem(d))
@@ -94,17 +109,17 @@ class MyApp(QMainWindow):
                 self.namelist_table_header.append("Nest " + str(self.ui.tableWidget_namelist.columnCount()))
                 self.ui.tableWidget_namelist.insertColumn(self.ui.tableWidget_namelist.columnCount())
                 self.ui.tableWidget_namelist.setHorizontalHeaderLabels(self.namelist_table_header)
-                self.nest.append([])
+                self.namelist.nest.append([])
                 for j in range(0, len(self.namelist.parameter)):
-                    self.nest[len(self.nest)-1].append('')
-                print('nest num:',len(self.nest))
+                    self.namelist.nest[len(self.namelist.nest)-1].append('')
+                print('nest num:',len(self.namelist.nest))
             self.domainNum = nums
         if num_diff < 0:
             for i in range(0, abs(num_diff)):
                 self.ui.tableWidget_namelist.removeColumn(self.ui.tableWidget_namelist.columnCount()-1)
                 self.namelist_table_header.pop()
-                del self.nest[len(self.nest) - 1]
-                print('nest num:',len(self.nest))
+                del self.namelist.nest[len(self.namelist.nest) - 1]
+                print('nest num:',len(self.namelist.nest))
             self.domainNum = nums
 
 

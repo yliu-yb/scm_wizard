@@ -164,7 +164,7 @@
          <attribute name="title">
           <string>NameList</string>
          </attribute>
-         <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,5,1">
+         <layout class="QGridLayout" name="gridLayout_5" rowstretch="0,9999,1">
           <item row="1" column="0">
            <widget class="QTableWidget" name="tableWidget_namelist"/>
           </item>
@@ -231,15 +231,9 @@
            <property name="enabled">
             <bool>true</bool>
            </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
            <property name="maximumSize">
             <size>
-             <width>2949</width>
+             <width>16777215</width>
              <height>16777215</height>
             </size>
            </property>
