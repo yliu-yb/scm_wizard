@@ -1,7 +1,7 @@
 import sys
 
 import numpy
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidgetItem
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import QEvent
@@ -17,6 +17,7 @@ import numpy as np
 import matplotlib.gridspec as gridspec
 from datetime import timedelta
 import PyQt5.QtWidgets
+from namelist import Namelist
 
 def fmt(x, pos):
     a, b = '{:.0e}'.format(x).split('e')
@@ -27,21 +28,104 @@ class MyApp(QMainWindow):
     def __init__(self, parent=None):
         self.data_mk = False
         self.show_force_variable = ''
+        self.domainNum = 1
+        self.namelist_table_header = ["Parameter", "Master Domain"]
 
         super(QMainWindow, self).__init__(parent)
         self.ui = UI.Ui_MainWindow()
         self.ui.setupUi(self)
+
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.setInterval(300)
         self.timer.timeout.connect(self.updateView)
+        self.set_singnal_slot()
+        # namelist load from user set file or form default file
+        # namelist domain
+        self.set_maxDomain_nums()
+        self.set_namelist_table_content()
+        self.add_data_to_namelist_table()
+        # namelist content
+        self.ui.tableWidget_namelist.cellPressed.connect(self.hint_namelist_description)
+        self.ui.tableWidget_namelist.cellChanged.connect(self.namelist_cell_changed)
+        self.ui.pushButton_Reset.clicked.connect(self.namelist_domain_reset)
+        self.nest = []
+
+    def namelist_domain_reset(self):
+        columnCount = self.ui.tableWidget_namelist.columnCount()
+        for i in range(1, columnCount):
+            for j in range(0, len(self.namelist.parameter)):
+                self.ui.tableWidget_namelist.setItem(j, i, QTableWidgetItem(''))
+
+    def namelist_cell_changed(self):
+        row = self.ui.tableWidget_namelist.currentRow()
+        column = self.ui.tableWidget_namelist.currentColumn()
+        if column == 0:
+            self.namelist.parameter[row] = self.ui.tableWidget_namelist.item(row, column).text();
+        elif column == 1:
+            self.namelist.mainDomain[row] = self.ui.tableWidget_namelist.item(row, column).text();
+
+    def hint_namelist_description(self):
+        row = self.ui.tableWidget_namelist.currentRow()
+        self.ui.textBrowser.clear()
+        self.ui.textBrowser.append(self.namelist.description[row])
+
+    def add_data_to_namelist_table(self):
+        self.namelist = Namelist(0)
+        for p, d in zip(self.namelist.parameter, self.namelist.defaultValue):
+            rowcount = self.ui.tableWidget_namelist.rowCount()
+            self.ui.tableWidget_namelist.insertRow(rowcount)
+            self.ui.tableWidget_namelist.setItem(rowcount, 0, QTableWidgetItem(p))
+            self.ui.tableWidget_namelist.setItem(rowcount, 1, QTableWidgetItem(d))
+
+    def set_namelist_table_content(self):
+        self.ui.tableWidget_namelist.setColumnCount(int(self.ui.comboBox_maxDoms.currentText()) + 1)
+        self.domainNum = int(self.ui.comboBox_maxDoms.currentText())
+        self.ui.tableWidget_namelist.horizontalHeader().setStretchLastSection(True)
+        self.ui.tableWidget_namelist.verticalHeader().hide()
+        self.ui.tableWidget_namelist.setHorizontalHeaderLabels(self.namelist_table_header)
+        self.ui.tableWidget_namelist.horizontalHeader().setDefaultAlignment(Qt.AlignLeft)
+
+    def domain_num_changed(self, strNums):
+        nums = int(strNums)
+        num_diff = nums - self.domainNum
+        if num_diff > 0:
+            for i in range(0, num_diff):
+                self.namelist_table_header.append("Nest " + str(self.ui.tableWidget_namelist.columnCount()))
+                self.ui.tableWidget_namelist.insertColumn(self.ui.tableWidget_namelist.columnCount())
+                self.ui.tableWidget_namelist.setHorizontalHeaderLabels(self.namelist_table_header)
+                self.nest.append([])
+                for j in range(0, len(self.namelist.parameter)):
+                    self.nest[len(self.nest)-1].append('')
+                print('nest num:',len(self.nest))
+            self.domainNum = nums
+        if num_diff < 0:
+            for i in range(0, abs(num_diff)):
+                self.ui.tableWidget_namelist.removeColumn(self.ui.tableWidget_namelist.columnCount()-1)
+                self.namelist_table_header.pop()
+                del self.nest[len(self.nest) - 1]
+                print('nest num:',len(self.nest))
+            self.domainNum = nums
+
+
+    def set_maxDomain_nums(self):
+        '''
+        set "max domain" combobox content as domain nums (1-16)
+        '''
+        for i in range(1, 16):
+            self.ui.comboBox_maxDoms.addItem(str(i))
+
+    def set_singnal_slot(self):
+        # "input" model parse_xml and force var change
+        self.ui.pushButton.clicked.connect(self.parse_xml)
+        self.ui.comboBox.currentTextChanged['QString'].connect(self.on_force_combobox)
+        self.ui.comboBox_maxDoms.currentTextChanged['QString'].connect(self.domain_num_changed)
 
     def resizeEvent(self, event):
         if self.data_mk:
             self.timer.stop()
             self.timer.start()
         return super(QMainWindow, self).resizeEvent(event)
-
     def updateView(self):
         if self.data_mk == False:
             return
@@ -51,7 +135,7 @@ class MyApp(QMainWindow):
 
     def parse_xml(self):
         # 选择xml文件
-        filename,_ = QFileDialog.getOpenFileName(self, '选择xml文件', '../data/', 'xml file (*.xml)')
+        filename,_ = QFileDialog.getOpenFileName(self, '选择xml文件', '../../scm_wizard_data/data/', 'xml file (*.xml)')
         self.ui.log_textBrowser.append('|>xml文件路径：'+filename)
         # 解析xml文件
         # self.px = parse_xml.Parse_xml(filename)

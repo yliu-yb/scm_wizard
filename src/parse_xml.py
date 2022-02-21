@@ -1,10 +1,10 @@
 import lxml
 from lxml import etree
 from make_forcing_nc import ForcingNCFileMake
-dtd_path = '../doc/column.dtd'
-input_souding_path = '../data/input_sounding'
-input_soil_path = '../data/input_soil'
-force_ideal_path = '../data/force_ideal.nc'
+dtd_path = '../../scm_wizard_data/doc/column.dtd'
+input_souding_path = '../../scm_wizard_data/data/input_sounding'
+input_soil_path = '../../scm_wizard_data/data/input_soil'
+force_ideal_path = '../../scm_wizard_data/data/force_ideal.nc'
 class Parse_xml():
     def __init__(self, xml_path):
         self.xml_path = xml_path

@@ -4,7 +4,7 @@ from netCDF4 import Dataset
 from pvlib import atmosphere as atmo
 import time
 import os
-cdlFName = '../doc/forcing_file_2.cdl'
+cdlFName = '../../scm_wizard_data/doc/forcing_file_2.cdl'
 
 class ForcingNCFileMake():
     def split(self, word):
