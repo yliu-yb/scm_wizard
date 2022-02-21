@@ -1,0 +1,108 @@
+&time_control; ;
+run_days;0;run time in days
+run_hours;24;run time in hours
+run_minutes;0;run time in minutes
+run_seconds;0;run time in seconds
+start_year;2016;four digit year of starting time
+start_month;06;two digit month of starting time
+start_day;01;two digit day of starting time
+start_hour;21;two digit hour of starting time
+start_minute;00;two digit minute of starting time
+start_second;00;two digit second of starting time
+end_year;2016;four digit year of ending time
+end_month;06;two digit month of ending time
+end_day;02;two digit day of ending time
+end_hour;21;two digit hour of ending time
+end_minute;00;two digit minute of ending time
+end_second;00;two digit second of ending time
+history_interval;5;history output file interval in minutes
+frames_per_outfile;10000;number of output times per history output file, used to split output into multiple files into smaller pieces
+restart;.false.;whether this run is a restart run
+restart_interval;1440000;restart output file interval in minutes
+io_form_history;2;2 = netCDF
+io_form_restart;2;2 = netCDF
+io_form_input;2;2 = netCDF
+io_form_boundary;2;2 = netCDF format, 4 = PHD5 format, 5 = GRIB1 format, 10 = GRIB2 format, 11 = pnetCDF format
+auxinput3_inname;"force_ideal.nc";force field file name
+auxinput3_interval_h;1;force field file interval in hours
+io_form_auxinput3;2;2 = netCDF
+
+&domains; ;
+time_step;60;time step for integration in integer seconds, recommend 6*dx (in km) for typical real-data cases
+time_step_fract_num;0;numerator for fractional time step
+time_step_fract_den;1;denominator for fractional time step, (Example, if you want to use 60.3 sec as your time step, set time_step = 60, time_step_fract_num = 3, and time_step_fract_den = 10)
+max_dom;1;number of domains - set it to > 1 if it is a nested run
+s_we;1;start index in x (west-east) direction (leave as is)
+e_we;3;end index in x (west-east) direction (staggered dimension)
+s_sn;1;start index in y (south-north) direction (leave as is)
+e_sn;3;end index in y (south-north) direction (staggered dimension)
+s_vert;1;start index in z (vertical) direction (leave as is)
+e_vert;40;end index in z (vertical) direction (staggered dimension), Note: this refers to full levels including surface and top vertical dimensions need to be the same for all nests Note: most variables are unstaggered (= staggered dim - 1)
+dx;1000;grid length in x direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.667)
+dy;1000;grid length in y direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.0658)
+ztop;9417.;used in mass model for idealized cases
+
+&scm; ;
+scm_force;1;switch for single column forcing (=0 off)
+scm_force_dx;10;DX for SCM forcing (in meters)
+num_force_layers;37;number of SCM input forcing layers
+scm_lu_index;2;SCM landuse category (2 is dryland, cropland and pasture)
+scm_isltyp;4;SCM soil category (4 is silt loam)
+scm_vegfra;0.5;SCM vegetation fraction
+scm_lat;32.74;SCM latitude
+scm_lon;117.14;SCM longitude
+scm_th_adv;.false.;turn on theta advection in SCM
+scm_wind_adv;.false.;turn on wind advection in SCM
+scm_qv_adv;.false.;turn on moisture advection in SCM
+scm_vert_adv;.false.;turn on vertical advection in SCM
+
+&physics; ;
+num_soil_layers;4;number of soil layers in land surface model, = 5: thermal diffusion scheme, = 4: Noah landsurface model, = 6 or 9: RUC landsurface model, = 10: CLM4 landsurface model, = 2: Pleim-Xu landsurface model, = 3: SSiB landsurface model
+mp_physics;9;microphysics option
+ra_lw_physics;1;longwave radiation option
+ra_sw_physics;1;shortwave radiation option
+radt;0;minutes between radiation physics calls, recommend 1 min per km of dx (e.g. 10 for 10 km); use the same value for all nests.
+sf_sfclay_physics;2;surface-layer option (old bl_sfclay_physics option)
+sf_surface_physics;2;land-surface option (old bl_surface_physics option)
+bl_pbl_physics;2;boundary-layer option
+bldt;0;minutes between boundary-layer physics calls
+cu_physics;7;cumulus option
+cudt;0;minutes between cumulus physics calls
+
+&dynamics; ;
+hybrid_opt;0;default; Klemp cubic form with etac, 0 = original WRF terrain-following coordinate (through V3)
+rk_ord;3;time-integration scheme option: 2 = Runge-Kutta 2nd order, 3 = Runge-Kutta 3rd order
+diff_opt;2;turbulence and mixing option:0 = no turbulence or explicit spatial numerical filters (km_opt IS IGNORED). 1 = evaluates 2nd order diffusion term on coordinate surfaces. uses kvdif for vertical diff unless PBL option is used. may be used with km_opt = 1 and 4. (= 1, recommended for real-data cases) 2 = evaluates mixing terms in physical space (stress form) (x,y,z). turbulence parameterization is chosen by specifying km_opt.
+km_opt;2;eddy coefficient option 1 = constant (use khdif kvdif) 2 = 1.5 order TKE closure (3D), 3 = Smagorinsky first order closure (3D) Note: option 2 and 3 are not recommended for DX > 2 km, 4 = horizontal Smagorinsky first order closure (recommended for real-data cases)
+damp_opt;2;upper level damping flag, 0 = without damping, 1 = with diffusive damping, maybe used for real-data cases (dampcoef nondimensional ~0.01-0.1), 2 = with Rayleigh  damping (dampcoef inverse time scale [1/s] e.g. .003; idealized case only not for real-data cases), 3 = with w-Rayleigh damping (dampcoef inverse time scale [1/s] e.g. .2; for real-data cases)
+dampcoef;.003;damping coefficient (see above)
+zdamp;5000;damping depth (m) from model top
+khdif;300;horizontal diffusion constant (m^2/s). A typical value should be 0.1*DX in meters.
+kvdif;1;vertical diffusion constant (m^2/s). A typical value should be 100.
+smdiv;0.1;divergence damping (0.1 is typical)
+emdiv;0.01;external-mode filter coef for mass coordinate model (0.01 is typical for real-data cases)
+epssm;0.1;time off-centering for vertical sound waves
+time_step_sound;6;number of sound steps per time-step (0=set automatically) (if using a time_step much larger than 6*dx (in km), proportionally increase number of sound steps - also best to use even numbers)
+h_mom_adv_order;5;horizontal momentum advection order (5=5th, etc.)
+v_mom_adv_order;3;vertical momentum advection order
+h_sca_adv_order;5;horizontal scalar advection order
+v_sca_adv_order;3;vertical scalar advection order
+pert_coriolis;.true.;Coriolis only acts on wind perturbation (idealized)
+mix_full_fields;.true.;used with diff_opt = 2; value of ".true." is recommended, except for highly idealized numerical tests; damp_opt must not be 1 if ".true." is chosen. .false. means subtract 1-d base-state profile before mixing
+non_hydrostatic;.true.;whether running the model in hydrostatic or non-hydro mode
+
+&bdy_control; ;
+periodic_x;.true.;periodic boundary conditions in x direction
+symmetric_xs;.false.;symmetric boundary conditions at x start (west)
+symmetric_xe;.false.;symmetric boundary conditions at x end (east)
+open_xs;.false.;open boundary conditions at x start (west)
+open_xe;.false.;open boundary conditions at x end (east)
+periodic_y;.true.;periodic boundary conditions in y direction
+symmetric_ys;.false.;symmetric boundary conditions at y start (south)
+symmetric_ye;.false.;symmetric boundary conditions at y end (north)
+open_ys;.false.;open boundary conditions at y start (south)
+open_ye;.false.;open boundary conditions at y end (north)
+
+&namelist_quilt; ;
+nio_tasks_per_group;0;default value is 0: no quilting; > 0 quilting I/O
+nio_groups;1;default 1. May be set to higher value for nesting IO or history and restart IO
