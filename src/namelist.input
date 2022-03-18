@@ -1,9 +1,9 @@
 &time_control
 run_days                                 = 00,
-run_hours                                = 02,
-run_minutes                              = 01,
-111                                      = 04,
-start_year                               = 05,
+run_hours                                = 24,
+run_minutes                              = 00,
+run_seconds                              = 00,
+start_year                               = 2016,
 start_month                              = 06,
 start_day                                = 01,
 start_hour                               = 21,
@@ -26,6 +26,7 @@ io_form_boundary                         = 2,
 auxinput3_inname                         = "force_ideal.nc",
 auxinput3_interval_h                     = 1,
 io_form_auxinput3                        = 2,
+/
 &domains
 time_step                                = 60,
 time_step_fract_num                      = 0,
@@ -37,12 +38,13 @@ s_sn                                     = 1,
 e_sn                                     = 3,
 s_vert                                   = 1,
 e_vert                                   = 40,
-dx                                       = 1000,
-dy                                       = 1000,
-ztop                                     = 9417.,
+dx                                       = 4000,
+dy                                       = 4000,
+ztop                                     = 12000.,
+/
 &scm
-scm_force                                = 1,
-scm_force_dx                             = 10,
+scm_force                                = 0,
+scm_force_dx                             = 10000,
 num_force_layers                         = 37,
 scm_lu_index                             = 2,
 scm_isltyp                               = 4,
@@ -53,6 +55,7 @@ scm_th_adv                               = .false.,
 scm_wind_adv                             = .false.,
 scm_qv_adv                               = .false.,
 scm_vert_adv                             = .false.,
+/
 &physics
 num_soil_layers                          = 4,
 mp_physics                               = 9,
@@ -65,6 +68,7 @@ bl_pbl_physics                           = 2,
 bldt                                     = 0,
 cu_physics                               = 7,
 cudt                                     = 0,
+/
 &dynamics
 hybrid_opt                               = 0,
 rk_ord                                   = 3,
@@ -86,6 +90,7 @@ v_sca_adv_order                          = 3,
 pert_coriolis                            = .true.,
 mix_full_fields                          = .true.,
 non_hydrostatic                          = .true.,
+/
 &bdy_control
 periodic_x                               = .true.,
 symmetric_xs                             = .false.,
@@ -97,6 +102,8 @@ symmetric_ys                             = .false.,
 symmetric_ye                             = .false.,
 open_ys                                  = .false.,
 open_ye                                  = .false.,
+/
 &namelist_quilt
 nio_tasks_per_group                      = 0,
 nio_groups                               = 1,
+/

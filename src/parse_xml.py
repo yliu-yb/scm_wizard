@@ -41,7 +41,7 @@ class Parse_xml():
                 self.force_qcloud = mfn.qcloud
                 self.force_qrain = mfn.qrain
                 self.force_theta = mfn.theta
-            return isok,log
+            return isok,log,force_ideal_path
     def make_input_sounding(self):
         columns = self.xml_file.getroot()
         column = columns.find('column')
@@ -81,7 +81,7 @@ class Parse_xml():
                                                                                                          '.1f')
                         + ' ' + format(theta[i], '.1f') + ' ' + format(qv[i], '.4f'))
                 f.write('\n')
-        return True
+        return True, input_souding_path
     def make_input_soil(self):
         columns = self.xml_file.getroot()
         column = columns.find('column')
@@ -107,4 +107,4 @@ class Parse_xml():
             for i in range(len(z_soil)):
                 f.write(format(z_soil[i], '.7f') + ' ' + format(SOILT[i], '.7f') + ' ' + format(SOILM[i], '.7f'))
                 f.write('\n')
-        return True
+        return True,input_soil_path

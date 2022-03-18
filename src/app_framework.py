@@ -1,23 +1,17 @@
 import sys
-
-import numpy
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QTableWidgetItem
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
-from PyQt5.QtCore import QEvent
 from PyQt5.QtCore import QTimer
 import UI
-# import WRF_SCM_FORCING_INITIALIZATION_MAKER as scm
 import parse_xml
-import datetime
-import matplotlib.dates as mdates
-from numpy import ma
-from matplotlib import ticker
-import numpy as np
-import matplotlib.gridspec as gridspec
-from datetime import timedelta
-import PyQt5.QtWidgets
 from namelist import Namelist
+from wrfout import Wrfoutdata
+import os
+from woker import Worker
+from mplwidget import MplCanvas
+from draw import draw_wrfout, draw_force, draw_initialization
+import threading
 
 def fmt(x, pos):
     a, b = '{:.0e}'.format(x).split('e')
@@ -26,11 +20,6 @@ def fmt(x, pos):
 
 class MyApp(QMainWindow):
     def __init__(self, parent=None):
-        self.data_mk = False
-        self.show_force_variable = ''
-        self.domainNum = 1
-        self.namelist_table_header = ["Parameter", "Master Domain"]
-
         super(QMainWindow, self).__init__(parent)
         self.ui = UI.Ui_MainWindow()
         self.ui.setupUi(self)
@@ -40,8 +29,230 @@ class MyApp(QMainWindow):
         self.timer.setSingleShot(True)
         self.timer.setInterval(300)
         self.timer.timeout.connect(self.updateView)
-        self.set_singnal_slot()
 
+        self.ui.tabWidget.currentChanged.connect(self.tab_changed)
+
+        # Setting
+        self.setting = QtCore.QSettings("v1", "wrf_scm_wizard")
+
+        #TAB "INPUT" SET
+        self.tab_input_set()
+        #TAB "NAMELIST" SET
+        self.tab_namelist_set()
+        #TAB "RUN" SET
+        self.tab_run_set()
+
+        self.tab_result_set()
+
+    def tab_result_set(self):
+        try:
+            self.wrfoutdata = Wrfoutdata(self.wrf_base_dir)
+            for item in self.wrfoutdata.vars:
+                self.ui.comboBox_N1.addItem(item)
+                self.ui.comboBox_N2.addItem(item)
+                self.ui.comboBox_N3.addItem(item)
+                self.ui.comboBox_N4.addItem(item)
+            self.ui.comboBox_N1.setCurrentIndex(0)
+            self.ui.comboBox_N2.setCurrentIndex(1)
+            self.ui.comboBox_N3.setCurrentIndex(2)
+            self.ui.comboBox_N4.setCurrentIndex(3)
+        except:
+            pass
+        self.ui.comboBox_N1.currentTextChanged['QString'].connect(lambda x: self.draw_wrfout(x, self.ui.widget_N1.canvas))
+        self.ui.comboBox_N2.currentTextChanged['QString'].connect(lambda x: self.draw_wrfout(x, self.ui.widget_N2.canvas))
+        self.ui.comboBox_N3.currentTextChanged['QString'].connect(lambda x: self.draw_wrfout(x, self.ui.widget_N3.canvas))
+        self.ui.comboBox_N4.currentTextChanged['QString'].connect(lambda x: self.draw_wrfout(x, self.ui.widget_N4.canvas))
+
+    def draw_wrfout(self, var, canvas : MplCanvas) -> None:
+        if var not in self.wrfoutdata.vars:
+            print('no var:', var)
+            return 0
+        xlabel = 'DateTime'
+        ylabel = 'Height'
+        title = getattr(self.wrfoutdata.df.variables[var], 'description')
+        barlabel = getattr(self.wrfoutdata.df.variables[var], 'units')
+
+        draw_wrfout(canvas, self.wrfoutdata.datetime, self.wrfoutdata.height, self.wrfoutdata.df.variables[var][:,:,0,0], xlabel, ylabel, title, barlabel)
+
+    def tab_changed(self, index):
+        if index == 2:
+            namelist_input_path = self.namelist.Save()
+            self.ui.lineEdit_namelist_input_folder.setText(namelist_input_path)
+        elif index == 3:
+            try:
+                threading.Thread(target=self.result_draw_thread).start()
+            except:
+                pass
+
+    def result_draw_thread(self):
+        self.draw_wrfout(self.ui.comboBox_N1.currentText(), self.ui.widget_N1.canvas)
+        self.draw_wrfout(self.ui.comboBox_N2.currentText(), self.ui.widget_N2.canvas)
+        self.draw_wrfout(self.ui.comboBox_N3.currentText(), self.ui.widget_N3.canvas)
+        self.draw_wrfout(self.ui.comboBox_N4.currentText(), self.ui.widget_N4.canvas)
+
+    def closeEvent(self, event):
+        self.setting.setValue('wrf_folder', self.ui.lineEdit_wrf_folder.text())
+        self.setting.setValue('ideal_folder', self.ui.lineEdit_ideal_folder.text())
+        self.setting.setValue('input_soil_folder', self.ui.lineEdit_input_soil_folder.text())
+        self.setting.setValue('input_sounding_folder', self.ui.lineEdit_input_sounding_folder.text())
+        self.setting.setValue('force_ideal_folder', self.ui.lineEdit_force_ideal_folder.text())
+        self.setting.setValue('namelist_folder', self.ui.lineEdit_namelist_input_folder.text())
+        self.setting.setValue('wrf_out_folder', self.ui.lineEdit_wrf_out_folder.text())
+        self.setting.setValue('wrf_base_dir', self.wrf_base_dir)
+        print(self.setting.fileName())
+
+    def tab_run_set(self):
+        self.ui.pushButton_wrf_folder.clicked.connect(lambda x: self.choose_folder('Choose WRF Executable Program',
+                                                                                   '|>WRF Executable Program Path: ',
+                                                                                   self.ui.lineEdit_wrf_folder,
+                                                                                   self.ui.log_textBrowser))
+
+        self.ui.pushButton_ideal_folder.clicked.connect(lambda x: self.choose_folder('Choose IDEAL Executable Program',
+                                                                                   '|>IDEAL Executable Program Path: ',
+                                                                                   self.ui.lineEdit_ideal_folder,
+                                                                                   self.ui.log_textBrowser))
+
+        self.ui.pushButton_input_soil_folder.clicked.connect(lambda x: self.choose_folder('Choose Input_soil File',
+                                                                                   '|>IDEAL Input_soil File: ',
+                                                                                   self.ui.lineEdit_input_soil_folder,
+                                                                                   self.ui.log_textBrowser))
+
+        self.ui.pushButton_input_sounding_folder.clicked.connect(lambda x: self.choose_folder('Choose Input_sounding File',
+                                                                                   '|>IDEAL Input_sounding File: ',
+                                                                                   self.ui.lineEdit_input_sounding_folder,
+                                                                                   self.ui.log_textBrowser))
+
+        self.ui.pushButton_force_ideal_folder.clicked.connect(lambda x: self.choose_folder('Choose Force_ideal File',
+                                                                                   '|>IDEAL Force_ideal File: ',
+                                                                                   self.ui.lineEdit_force_ideal_folder,
+                                                                                   self.ui.log_textBrowser))
+
+        self.ui.pushButton_namelist_input_folder.clicked.connect(lambda x: self.choose_folder('Choose Namelist_input File',
+                                                                                     '|>IDEAL Namelist_input File: ',
+                                                                                     self.ui.lineEdit_namelist_input_folder,
+                                                                                     self.ui.log_textBrowser))
+
+        self.ui.pushButton_wrf_out_folder.clicked.connect(lambda x: self.select_directory('Choose WRF Output Folder',
+                                                                                     '|>IDEAL WRF Output Folder: ',
+                                                                                     self.ui.lineEdit_wrf_out_folder,
+                                                                                     self.ui.log_textBrowser))
+
+        self.ui.pushButton_run_scm_wrf.clicked.connect(self.run_wrf_scm)
+        self.ui.pushButton_wrf_run_log_clear.clicked.connect(self.clear_wrf_run_log)
+        self.wrf_base_dir = ''
+
+        if self.setting.contains('wrf_folder'):
+            self.ui.lineEdit_wrf_folder.setText(self.setting.value('wrf_folder'))
+        if self.setting.contains('ideal_folder'):
+            self.ui.lineEdit_ideal_folder.setText(self.setting.value('ideal_folder'))
+        if self.setting.contains('input_soil_folder'):
+            self.ui.lineEdit_input_soil_folder.setText(self.setting.value('input_soil_folder'))
+        if self.setting.contains('input_sounding_folder'):
+            self.ui.lineEdit_input_sounding_folder.setText(self.setting.value('input_sounding_folder'))
+        if self.setting.contains('force_ideal_folder'):
+            self.ui.lineEdit_force_ideal_folder.setText(self.setting.value('force_ideal_folder'))
+        if self.setting.contains('namelist_folder'):
+            self.ui.lineEdit_namelist_input_folder.setText(self.setting.value('namelist_folder'))
+        if self.setting.contains('wrf_out_folder'):
+            self.ui.lineEdit_wrf_out_folder.setText(self.setting.value('wrf_out_folder'))
+        if self.setting.contains('wrf_base_dir'):
+            self.wrf_base_dir = self.setting.value('wrf_base_dir')
+        self.worker = Worker()
+        self.worker.outSignal.connect(self.logging)
+
+    def logging(self, string):
+        if string == 'yanliu':
+            try:
+                self.ui.comboBox_N1.clear()
+                self.ui.comboBox_N2.clear()
+                self.ui.comboBox_N3.clear()
+                self.ui.comboBox_N4.clear()
+                self.wrfoutdata = Wrfoutdata(self.wrf_base_dir)
+                for item in self.wrfoutdata.vars:
+                    self.ui.comboBox_N1.addItem(item)
+                    self.ui.comboBox_N2.addItem(item)
+                    self.ui.comboBox_N3.addItem(item)
+                    self.ui.comboBox_N4.addItem(item)
+
+                self.ui.comboBox_N1.setCurrentIndex(0)
+                self.ui.comboBox_N2.setCurrentIndex(1)
+                self.ui.comboBox_N3.setCurrentIndex(2)
+                self.ui.comboBox_N4.setCurrentIndex(3)
+                self.ui.log_textBrowser.append('|>run WRF successed')
+            except:
+                pass
+        else:
+            self.ui.textBrowser_wrf_out.append(string.strip())
+    def clear_wrf_run_log(self):
+        self.ui.textBrowser_wrf_out.clear()
+
+    def run_wrf_scm(self):
+        wrf_base_dir_list = self.ui.lineEdit_wrf_folder.text().split('/')
+        self.wrf_base_dir = ""
+        for d in wrf_base_dir_list[:len(wrf_base_dir_list)-1]:
+            self.wrf_base_dir += d + "/"
+
+        self.run_wrf_scm_fileName = "run_wrf_scm.sh"
+
+        # clear wrf folder
+        file_1 = open('clear_wrf_folder.sh', 'w')
+        file_1.write("cd " + self.wrf_base_dir)
+        file_1.write("\n")
+        file_1.write("rm -rf input_soil")
+        file_1.write("\n")
+        file_1.write("rm -rf input_sounding")
+        file_1.write("\n")
+        file_1.write("rm -rf force_ideal.nc")
+        file_1.write("\n")
+        file_1.write("rm -rf namelist.input")
+        file_1.write("\n")
+        file_1.write("rm -rf wrfinput_*")
+        file_1.write("\n")
+        file_1.write("rm -rf wrfout_*")
+
+        file_1.close()
+        os.system("chmod +x clear_wrf_folder.sh")
+        os.system("./clear_wrf_folder.sh")
+        os.system("rm -rf clear_wrf_folder.sh")
+
+        # link input data to wrf folder
+        os.system("ln " + self.ui.lineEdit_input_soil_folder.text() + " " + self.wrf_base_dir)
+        os.system("ln " + self.ui.lineEdit_input_sounding_folder.text() + " " + self.wrf_base_dir)
+        os.system("ln " + self.ui.lineEdit_force_ideal_folder.text() + " " + self.wrf_base_dir)
+        os.system("ln " + self.ui.lineEdit_namelist_input_folder.text() + " " + self.wrf_base_dir)
+
+        self.make_run_wrf_scm_sh()
+        os.system("chmod +x " + self.run_wrf_scm_fileName)
+        command = "./" + self.run_wrf_scm_fileName
+
+        self.worker.run_command(command, cwd = './')
+
+    def make_run_wrf_scm_sh(self):
+        file = open("./" + self.run_wrf_scm_fileName, 'w')
+        file.write("cd " + self.wrf_base_dir)
+        file.write("\n")
+        file.write("ulimit -s unlimited")
+        file.write("\n")
+        file.write(self.ui.lineEdit_ideal_folder.text())
+        file.write("\n")
+        file.write(self.ui.lineEdit_wrf_folder.text())
+        file.close()
+
+    def choose_folder(self, hint_1, hint_2, lineEdit, log_browser):
+        filename,_ = QFileDialog.getOpenFileName(self, hint_1, '', 'ALL FILES(*)')
+        if filename == "":
+            return 0
+        lineEdit.setText(filename)
+        log_browser.append(hint_2 + filename)
+    def select_directory(self, hint_1, hint_2, lineEdit, log_browser):
+        directory = QFileDialog.getExistingDirectory(self, hint_1)
+        if directory == "":
+            return 0
+        lineEdit.setText(directory)
+        log_browser.append(hint_2 + directory)
+    def tab_namelist_set(self):
+        self.domainNum = 1
+        self.namelist_table_header = ["Parameter", "Master Domain"]
         # namelist load from user set file or form default file
         # namelist domain
         self.set_maxDomain_nums()
@@ -53,6 +264,11 @@ class MyApp(QMainWindow):
         self.ui.tableWidget_namelist.cellChanged.connect(self.namelist_cell_changed)
         self.ui.pushButton_Reset.clicked.connect(self.namelist_domain_reset)
         self.ui.pushButton_validate.clicked.connect(self.namelist.Save)
+
+    def tab_input_set(self):
+        self.data_mk = False
+        self.show_force_variable = ''
+        self.set_singnal_slot()
 
     def save_namelist(self):
         self.namelist.Save()
@@ -72,7 +288,8 @@ class MyApp(QMainWindow):
         else:
             self.namelist.nest[column-2][row] = cell_text
         if row > 0 and row < 17:
-            cell_text = cell_text.zfill(2)
+            if cell_text != '':
+                cell_text = cell_text.zfill(2)
             self.ui.tableWidget_namelist.cellChanged.disconnect(self.namelist_cell_changed)
             self.ui.tableWidget_namelist.setItem(row, column, QTableWidgetItem(cell_text))
             self.ui.tableWidget_namelist.cellChanged.connect(self.namelist_cell_changed)
@@ -137,20 +354,32 @@ class MyApp(QMainWindow):
         self.ui.comboBox_maxDoms.currentTextChanged['QString'].connect(self.domain_num_changed)
 
     def resizeEvent(self, event):
-        if self.data_mk:
-            self.timer.stop()
-            self.timer.start()
+        # if self.data_mk:
+        self.timer.stop()
+        self.timer.start()
         return super(QMainWindow, self).resizeEvent(event)
     def updateView(self):
+        try:
+            self.draw_wrfout(self.ui.comboBox_N1.currentText(), self.ui.widget_N1.canvas)
+            self.draw_wrfout(self.ui.comboBox_N2.currentText(), self.ui.widget_N2.canvas)
+            self.draw_wrfout(self.ui.comboBox_N3.currentText(), self.ui.widget_N3.canvas)
+            self.draw_wrfout(self.ui.comboBox_N4.currentText(), self.ui.widget_N4.canvas)
+        except:
+            pass
+
         if self.data_mk == False:
             return
-        self.plot_initialization()
+        draw_initialization(self.ui.plot_initial_widget.canvas, self.px.souding_z, self.px.souding_qv,
+                            self.px.souding_theta, self.px.souding_u, self.px.souding_v)
+
         self.on_force_combobox(self.show_force_variable)
         print('window resize and redraw data')
 
     def parse_xml(self):
         # 选择xml文件
         filename,_ = QFileDialog.getOpenFileName(self, '选择xml文件', '../../scm_wizard_data/data/', 'xml file (*.xml)')
+        if filename == "":
+            return 0
         self.ui.log_textBrowser.append('|>xml文件路径：'+filename)
         # 解析xml文件
         # self.px = parse_xml.Parse_xml(filename)
@@ -175,27 +404,30 @@ class MyApp(QMainWindow):
                 self.ui.log_textBrowser.append(self.str2Red(str(err)))
             return False
         # 生成input_sounding
-        is_ok = self.px.make_input_sounding()
+        is_ok,input_souding_path = self.px.make_input_sounding()
         if is_ok:
             self.ui.log_textBrowser.append('|>input_sounding 生成成功')
-            self.plot_initialization()
+            self.ui.lineEdit_input_sounding_folder.setText(input_souding_path)
+            draw_initialization(self.ui.plot_initial_widget.canvas, self.px.souding_z, self.px.souding_qv, self.px.souding_theta, self.px.souding_u, self.px.souding_v)
         else:
             self.ui.log_textBrowser.append('<<--FATAL ERROR-->>')
             self.ui.log_textBrowser.append('|>input_sounding 生成失败')
             return False
         # 生成input_soil
-        is_ok = self.px.make_input_soil()
+        is_ok,input_soil_path = self.px.make_input_soil()
         if is_ok:
             self.ui.log_textBrowser.append('|>input_soil 生成成功')
+            self.ui.lineEdit_input_soil_folder.setText(input_soil_path)
         else:
             self.ui.log_textBrowser.append('<<--FATAL ERROR-->>')
             self.ui.log_textBrowser.append('|>input_soil 生成失败')
             return False
         # 生成force.nc
-        is_ok,error_log = self.px.make_forcing()
+        is_ok,error_log,force_ideal_path = self.px.make_forcing()
         if is_ok:
             self.ui.log_textBrowser.append('|>force.nc 生成成功')
             self.on_force_combobox('U')
+            self.ui.lineEdit_force_ideal_folder.setText(force_ideal_path)
         else:
             self.ui.log_textBrowser.append('<<--FATAL ERROR-->>')
             self.ui.log_textBrowser.append('|>force.nc 生成失败，错误提示：')
@@ -204,89 +436,30 @@ class MyApp(QMainWindow):
         self.data_mk = True
         self.ui.log_textBrowser.append('<<--SUCCEESS-->>')
 
-    def plot_force(self, f_datetime, f_z, f_variable_2D, title, ylabel, xlabel, cbar_label, log_mk=False):
-        force_datetime = [datetime.datetime.strptime(dt, '%Y-%m-%d_%H:%M:%S') for dt in f_datetime]
-        f_variable_2D = list(map(list, zip(*f_variable_2D)))
-        ax1 = self.ui.plot_force_widget.canvas.fig.add_subplot(111)
-        if force_datetime[len(force_datetime)-1] - force_datetime[0] > timedelta(days=1):
-            ax1.xaxis.set_major_formatter(mdates.DateFormatter('%m%d'))
-        else:
-            ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H%M'))
-        ax1.set_ylim(top = 12)
-        if log_mk:
-            f_variable_2D = numpy.array(f_variable_2D)
-            f_variable_2D = ma.masked_where(f_variable_2D <= 0, f_variable_2D)
-            cs = ax1.contourf(force_datetime, f_z, f_variable_2D, locator=ticker.LogLocator(),cmap='jet')
-            # cntr1, ax = ax0, pad = 0.01, format = ticker.FuncFormatter(fmt)
-            cbar = self.ui.plot_force_widget.canvas.fig.colorbar(cs, ax = ax1, pad = 0.01, format = ticker.FuncFormatter(fmt), label = cbar_label)
-        else:
-            cs = ax1.contourf(force_datetime, f_z, f_variable_2D, cmap='jet')
-            cbar = self.ui.plot_force_widget.canvas.fig.colorbar(cs, ax = ax1, pad = 0.01, label = cbar_label)
-        ax1.set_title(title)
-        ax1.set_xlabel(xlabel)
-        ax1.set_ylabel(ylabel)
-        self.ui.plot_force_widget.canvas.fig.autofmt_xdate()
-        self.ui.plot_force_widget.canvas.fig.set_tight_layout(True)
-        self.ui.plot_force_widget.canvas.draw()
-        cbar.remove()
-        ax1.remove()
-
     def on_force_combobox(self, force_variable):
         self.show_force_variable = force_variable
         if force_variable == 'U':
-            self.plot_force(self.px.force_datetime, [x / 1000 for x in self.px.force_z]
+            draw_force(self.ui.plot_force_widget.canvas, self.px.force_datetime, [x / 1000 for x in self.px.force_z]
                        ,self.px.force_u, force_variable, 'Height(km)', 'DateTime', 'ms$^{-1}$')
         if force_variable == 'V':
-            self.plot_force(self.px.force_datetime, [x / 1000 for x in self.px.force_z]
+            draw_force(self.ui.plot_force_widget.canvas, self.px.force_datetime, [x / 1000 for x in self.px.force_z]
                        , self.px.force_v, force_variable, 'Height(km)', 'DateTime', 'ms$^{-1}$')
         if force_variable == 'W':
-            self.plot_force(self.px.force_datetime, [x / 1000 for x in self.px.force_z]
+            draw_force(self.ui.plot_force_widget.canvas, self.px.force_datetime, [x / 1000 for x in self.px.force_z]
                        , self.px.force_w, force_variable, 'Height(km)', 'Dat eTime', 'ms$^{-1}$')
         if force_variable == 'QVAPOR':
-            self.plot_force(self.px.force_datetime, [x / 1000 for x in self.px.force_z]
+            draw_force(self.ui.plot_force_widget.canvas, self.px.force_datetime, [x / 1000 for x in self.px.force_z]
                        , self.px.force_qvapor, force_variable, 'Height(km)', 'DateTime', 'kgkg$^{-1}$', True)
         if force_variable == 'QRAIN':
-            self.plot_force(self.px.force_datetime, [x / 1000 for x in self.px.force_z]
+            draw_force(self.ui.plot_force_widget.canvas, self.px.force_datetime, [x / 1000 for x in self.px.force_z]
                        , self.px.force_qrain, force_variable, 'Height(km)', 'DateTime', 'kgkg$^{-1}$', True)
         if force_variable == 'QCLOUD':
-            self.plot_force(self.px.force_datetime, [x / 1000 for x in self.px.force_z]
+            draw_force(self.ui.plot_force_widget.canvas, self.px.force_datetime, [x / 1000 for x in self.px.force_z]
                        , self.px.force_qcloud, force_variable, 'Height(km)', 'DateTime', 'kgkg$^{-1}$', True)
         if force_variable == 'theta':
-            self.plot_force(self.px.force_datetime, [x / 1000 for x in self.px.force_z]
+            draw_force(self.ui.plot_force_widget.canvas, self.px.force_datetime, [x / 1000 for x in self.px.force_z]
                        , self.px.force_theta, force_variable, 'Height(km)', 'DateTime', 'K', True)
 
-    def plot_initialization(self):
-        sounding_z = [x / 1000 for x in self.px.souding_z]
-        gs = self.ui.plot_initial_widget.canvas.fig.add_gridspec(1, 4)
 
-        ax1 = self.ui.plot_initial_widget.canvas.fig.add_subplot(gs[0,0:3])
-        ax2 = self.ui.plot_initial_widget.canvas.fig.add_subplot(gs[0,3:4])
-        #
-        sounding_qv = numpy.array(self.px.souding_qv)
-        sounding_qv = ma.masked_where(sounding_qv <= 0, sounding_qv)
-        ax1.set_xscale('log')
-        ax1.set_ylim(top = 12)
-        p1, = ax1.plot(sounding_qv, sounding_z, 'b-', label = 'qv')
-        ax1.set_xlabel('kgkg$^{-1}$')
-        ax1.set_ylabel('Height(km)')
-        ax1.xaxis.label.set_color(p1.get_color())
-        ax11 = ax1.twiny()
-        p11, = ax11.plot(self.px.souding_theta, sounding_z, 'g-', label = 'theta')
-        ax11.set_xlabel('K')
-        ax11.xaxis.label.set_color(p11.get_color())
-        tkw = dict(size=4, width=1.5)
-        ax1.tick_params(axis='x', colors=p1.get_color(), **tkw)
-        ax11.tick_params(axis='x', colors=p11.get_color(), **tkw)
-        ax1.legend(handles=[p1, p11])
-        ax2.set_ylim(top = 12)
-        ax2.barbs([0 for x in range(len(sounding_z))], sounding_z, self.px.souding_u, self.px.souding_v, length = 7)
-        ax2.set_title('Wind')
-        ax2.axes.get_xaxis().set_visible(False)
-        # ax2.axes.get_yaxis().set_visible(False)
-        self.ui.plot_initial_widget.canvas.fig.set_tight_layout(True)
-        self.ui.plot_initial_widget.canvas.draw()
-        ax1.remove()
-        ax11.remove()
-        ax2.remove()
     def str2Red(self, str):
         return "<span style=\" font-size:10pt; font-weight:500; color:#ff0000;\" >" + str + "</span>"

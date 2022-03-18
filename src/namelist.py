@@ -1,3 +1,4 @@
+namelist_input_path = './namelist.input'
 
 class Namelist():
     def __init__(self, io):
@@ -28,9 +29,12 @@ class Namelist():
         return 0
 
     def Save(self):
-        f = open('namelist.input', 'w')
+        f = open(namelist_input_path, 'w')
         for i in range(0, len(self.parameter)):
             if str(self.parameter[i]).find('&') != -1:
+                if i > 0:
+                    f.write('/')
+                    f.write('\n')
                 line = self.parameter[i]
             else:
                 line = str(self.parameter[i]).ljust(40)
@@ -51,4 +55,6 @@ class Namelist():
 
             f.write(line)
             f.write('\n')
+        f.write('/')
         f.close()
+        return namelist_input_path

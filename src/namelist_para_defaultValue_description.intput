@@ -38,13 +38,13 @@ s_sn;1;start index in y (south-north) direction (leave as is)
 e_sn;3;end index in y (south-north) direction (staggered dimension)
 s_vert;1;start index in z (vertical) direction (leave as is)
 e_vert;40;end index in z (vertical) direction (staggered dimension), Note: this refers to full levels including surface and top vertical dimensions need to be the same for all nests Note: most variables are unstaggered (= staggered dim - 1)
-dx;1000;grid length in x direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.667)
-dy;1000;grid length in y direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.0658)
-ztop;9417.;used in mass model for idealized cases
+dx;4000;grid length in x direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.667)
+dy;4000;grid length in y direction; ARW: unit in meters, NMM: unit in degrees (e.g. 0.0658)
+ztop;12000.;used in mass model for idealized cases
 
 &scm; ;
-scm_force;1;switch for single column forcing (=0 off)
-scm_force_dx;10;DX for SCM forcing (in meters)
+scm_force;0;switch for single column forcing (=0 off)
+scm_force_dx;10000;DX for SCM forcing (in meters)
 num_force_layers;37;number of SCM input forcing layers
 scm_lu_index;2;SCM landuse category (2 is dryland, cropland and pasture)
 scm_isltyp;4;SCM soil category (4 is silt loam)
